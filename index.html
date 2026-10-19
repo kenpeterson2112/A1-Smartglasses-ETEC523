@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Do AI smart glasses pass the eye test in the classroom? An interactive, mobile-first analysis for ETEC 523.">
+<title>Passing the Eye Test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Lexend:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: full-bleed photo bands with slow parallax separate three groups of content sheets. Sans-serif only. Orange is the one accent; blue marks notes and sources. */
+:root{
+  --bg:#e8ecf2;
+  --surface:#ffffff;
+  --fg:#0d1a2b;
+  --muted:#46556a;
+  --line:#cbd4e0;
+  --accent:#c4421d;
+  --accent-ink:#ffffff;
+  --accent-soft:#fbe4db;
+  --edge:#0d1a2b;--glow:rgba(0,0,0,0);--accent-deep:#8f2b0f;
+  --shade:rgba(13,26,43,.16);--ruled:#b8c9dc;--note:#ffe27a;--note-ink:#3a2f06;
+  --sky:rgba(86,128,214,.22);
+  --on-photo:#ffffff;--pen-photo:#ff9a6e;
+  --warn:#1f4fb4;
+  --warn-soft:#dde6f8;
+  --f-display:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --f-body:'Lexend','Helvetica Neue',Arial,sans-serif;
+  --f-label:'Archivo','Helvetica Neue',Arial,sans-serif;
+  --f-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --f-pen:'Caveat','Segoe Script','Bradley Hand',cursive;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --edge:#9fb2d0;--glow:rgba(0,0,0,0);--accent-deep:#c25a33;--shade:rgba(0,0,0,.38);--ruled:#2c3d4a;--note:#f0d76a;--note-ink:#2c2808;--sky:rgba(96,140,230,.2);
+  --bg:#16213a;--surface:#1f2d49;--fg:#e8eef8;--muted:#a5b3ca;--line:#34476a;
+  --accent:#ff8d5e;--accent-ink:#2b1005;--accent-soft:#43291f;--warn:#93b8ff;--warn-soft:#243b6b;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --edge:#9fb2d0;--glow:rgba(0,0,0,0);--accent-deep:#c25a33;--shade:rgba(0,0,0,.38);--ruled:#2c3d4a;--note:#f0d76a;--note-ink:#2c2808;--sky:rgba(96,140,230,.2);
+  --bg:#16213a;--surface:#1f2d49;--fg:#e8eef8;--muted:#a5b3ca;--line:#34476a;
+  --accent:#ff8d5e;--accent-ink:#2b1005;--accent-soft:#43291f;--warn:#93b8ff;--warn-soft:#243b6b;color-scheme:dark}
+
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:1.0625rem;line-height:1.6;padding-inline:1rem;padding-block:0 4rem}
+*{box-sizing:border-box}
+.wrap{max-width:42rem;margin-inline:auto;display:flex;flex-direction:column;gap:3.5rem}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.1;margin:0}
+p{margin:0}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.label{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.draft{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;color:var(--warn);background:var(--warn-soft);padding:.15rem .45rem;border-radius:3px;display:inline-block}
+
+header{padding-top:2.5rem;display:flex;flex-direction:column;gap:1.25rem}
+header h1{font-size:clamp(2.6rem,11vw,4.6rem);font-weight:800;letter-spacing:-.03em}
+header h1 em{font-style:normal;color:var(--accent)}
+.deck{font-size:1.2rem;max-width:34rem}
+.byline{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center}
+
+section{display:flex;flex-direction:column;gap:1.1rem}
+.kicker{display:flex;gap:.6rem;align-items:center}
+.kicker::before{content:"";width:1.6rem;height:3px;background:var(--accent)}
+section h2{font-size:clamp(1.7rem,6.5vw,2.3rem);font-weight:700;letter-spacing:-.02em}
+.tool{background:var(--surface);border:2px solid var(--edge);border-top:5px solid var(--accent);border-radius:14px;padding:1rem;display:flex;flex-direction:column;gap:1rem;box-shadow:0 14px 34px -16px var(--glow),0 2px 0 var(--edge)}
+.tool::before{content:"\25B6  Interactive \00B7  tap to try";font-family:var(--f-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.steplab{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:flex;gap:.5rem;align-items:center;margin-bottom:-.5rem}
+.steplab i{font-style:normal;background:var(--accent);color:var(--accent-ink);border-radius:50%;width:1.25rem;height:1.25rem;display:grid;place-items:center;font-weight:700}
+@keyframes swap{from{opacity:.2;transform:translateY(3px)}to{opacity:1;transform:none}}
+.swap{animation:swap .28s ease-out}
+@media (prefers-reduced-motion:reduce){.swap{animation:none}}
+
+.track{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem}
+.track::before{content:"";position:absolute;left:12.5%;right:12.5%;top:1.15rem;height:2px;background:var(--line)}
+.stop{position:relative;background:none;border:0;color:var(--fg);font:inherit;cursor:pointer;padding:0;display:flex;flex-direction:column;align-items:center;gap:.45rem;min-width:0}
+.stop .dot{width:2.3rem;height:2.3rem;border-radius:50%;background:var(--accent-soft);border:2px solid var(--edge);box-shadow:0 2px 0 var(--edge);display:grid;place-items:center;font-family:var(--f-mono);font-size:.7rem;z-index:1}
+.stop .yr{font-family:var(--f-display);font-weight:700;font-size:1rem}
+.stop[aria-selected="true"] .dot{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.panel{min-height:9.5rem;display:flex;flex-direction:column;gap:.6rem}
+.panel h3{font-size:1.3rem}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem}
+.chip{font-family:var(--f-mono);font-size:.72rem;border:1px solid var(--line);border-radius:999px;padding:.2rem .6rem;color:var(--muted)}
+
+.seg{display:grid;gap:.35rem}
+.seg.c4{grid-template-columns:repeat(4,1fr)}
+.seg.c3{grid-template-columns:repeat(3,1fr)}
+.seg.c2{grid-template-columns:repeat(2,1fr)}
+.seg button,.toggle button{font-family:var(--f-display);font-weight:600;font-size:clamp(.78rem,3.6vw,.9rem);padding:.7rem .2rem;border-radius:10px;border:2px solid var(--edge);background:var(--accent-soft);color:var(--fg);cursor:pointer;min-width:0;box-shadow:0 3px 0 var(--edge);transition:transform .1s,box-shadow .1s,background .15s}
+.seg button:hover,.toggle button:hover{border-color:var(--accent)}
+.seg button:active,.toggle button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--edge)}
+.seg button[aria-pressed="true"],.toggle button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);box-shadow:0 3px 0 var(--accent-deep);font-weight:700}
+.q{border-left:3px solid var(--accent);padding:.2rem 0 .2rem .9rem;font-style:italic}
+
+.cols{display:grid;grid-template-columns:1fr;gap:.6rem}
+.cols div{border:1px solid var(--line);border-radius:8px;padding:.7rem .8rem;display:flex;flex-direction:column;gap:.15rem;min-width:0}
+.cols .t{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+.stack,#tl-panel,#cmp,#cards{display:grid}
+.slot{grid-area:1/1;display:flex;flex-direction:column;gap:1rem;visibility:hidden;min-width:0;align-content:start}
+.slot.on{visibility:visible}
+.slot.cols{display:grid;gap:.6rem}
+#tl-panel .slot{gap:.6rem}
+#cards .slot{gap:0}
+.lens{display:grid;grid-template-columns:1fr;gap:.8rem}
+.view{border:1px solid var(--line);border-radius:8px;padding:.8rem;display:flex;flex-direction:column;gap:.5rem;min-width:0}
+.view.glass{border-color:var(--accent);background:var(--accent-soft)}
+.meter{height:.7rem;border-radius:4px;background:var(--line);overflow:hidden}
+.meter i{display:block;height:100%;background:var(--warn);width:0;transition:width .5s}
+@media (prefers-reduced-motion:reduce){.meter i{transition:none}}
+.row{display:flex;flex-direction:column;gap:.15rem;margin-bottom:.5rem}
+.row b{font-family:var(--f-display);font-weight:700;font-size:1.1rem;min-height:1.4em}
+
+.toggle{display:grid;grid-template-columns:1fr 1fr;gap:.35rem}
+details{border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+details+details{margin-top:.5rem}
+summary{cursor:pointer;padding:.85rem 1rem;font-family:var(--f-display);font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:1rem}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-family:var(--f-mono);color:var(--accent)}
+details[open] summary::after{content:"\2212"}
+summary>span:first-child{min-width:0}
+details p{padding:0 1rem 1rem}
+details p+p{padding-top:0}
+.vs{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+.tag{font-family:var(--f-mono);font-size:.62rem;letter-spacing:.08em;padding:.12rem .4rem;border-radius:3px;white-space:nowrap;align-self:center}
+.tag.mine{background:var(--accent);color:var(--accent-ink)}
+.tag.idea{background:var(--accent-soft);color:var(--fg);border:1px solid var(--accent)}
+.tag.src{background:var(--warn-soft);color:var(--warn)}
+.tag.cited{background:var(--surface);color:var(--fg);border:1px solid var(--fg)}
+.refs li{display:block;padding-left:1.6rem;text-indent:-1.6rem;border-bottom:0;padding-bottom:0}
+.sub2{margin-top:.6rem}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem .8rem}
+
+.qrcard{display:none}
+.qrtile{background:#fff;padding:.5rem;border-radius:8px;line-height:0;flex:none}
+.qrtile svg{width:7.5rem;height:7.5rem;display:block}
+.qrtext{display:flex;flex-direction:column;gap:.35rem;min-width:0}
+.qrtext b{font-family:var(--f-display);font-size:1rem}
+.qrtext span{font-size:.9rem;line-height:1.4}
+.qrtext code{font-family:var(--f-mono);font-size:.68rem;color:var(--muted);overflow-wrap:anywhere}
+@media (min-width:40rem) and (hover:hover) and (pointer:fine){
+  .qrcard{display:flex;flex-direction:row;align-items:center;gap:1rem;padding:.9rem;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+}
+@media (min-width:75rem) and (hover:hover) and (pointer:fine){
+  .qrcard{position:fixed;top:2rem;right:2rem;width:11.5rem;flex-direction:column;align-items:stretch;z-index:5}
+  .qrtile{align-self:center}
+  .qrtile svg{width:8.5rem;height:8.5rem}
+}
+.sub{font-size:1.25rem;margin-top:.5rem}
+.lensbox{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#000;touch-action:pan-y;cursor:grab}
+.lensbox:active{cursor:grabbing}
+.lensbox canvas{display:block;width:100%}
+.ctl{display:flex;flex-wrap:wrap;gap:.6rem 1rem;align-items:center}
+.pbtn{font-family:var(--f-display);font-weight:600;font-size:.85rem;padding:.45rem .9rem;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+#lensNotes .slot{gap:.4rem}
+#lensNotes{display:grid}
+.src{display:flex;flex-direction:column;gap:.8rem;padding:0;margin:0;list-style:none}
+.src li{display:flex;flex-direction:column;gap:.15rem;border-bottom:1px solid var(--line);padding-bottom:.8rem;overflow-wrap:anywhere}
+.ev li{border-left:3px solid var(--accent);border-bottom:0;padding-left:.8rem;padding-bottom:0}
+.todo{background:var(--warn-soft);border-radius:8px;padding:1rem;font-size:.95rem}
+.todo ul{margin:.5rem 0 0;padding-left:1.1rem}
+footer{font-family:var(--f-mono);font-size:.72rem;color:var(--muted);display:flex;flex-direction:column;gap:.3rem}
+
+@media (min-width:40rem){
+  .lens,.cols{grid-template-columns:1fr 1fr}
+  body{font-size:1.125rem}
+}
+
+
+/* ---- Photo bands, sans, slate ---- */
+body{padding-inline:0;padding-block:0;font-size:1rem;line-height:1.7;font-weight:300;background:radial-gradient(900px 500px at 15% 0,var(--sky),transparent 70%),var(--bg)}
+@media (min-width:40rem){body{font-size:1.06rem}}
+b,strong{font-weight:600}
+.wrap{max-width:44rem;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:3.5rem}
+.px{position:relative;overflow:hidden;isolation:isolate;background:#0c1626;color:var(--on-photo)}
+.pxbg{position:absolute;left:0;right:0;top:-14%;height:128%;width:100%;object-fit:cover;z-index:-2;will-change:transform}
+.px::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(8,16,30,.6),rgba(8,16,30,.4) 55%,rgba(8,16,30,.65))}
+.hero .wrap{padding-block:2.5rem 3.5rem;position:relative}
+.hero .ph{bottom:.7rem}
+.hero header{padding-top:0}
+.band .wrap{padding-block:5.5rem;position:relative}
+.pull{font-family:var(--f-display);font-weight:800;font-stretch:100%;font-size:clamp(1.8rem,7vw,3rem);line-height:1.08;letter-spacing:-.02em;text-wrap:balance;max-width:30rem}
+.ph{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:.7rem;font-family:var(--f-label);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;opacity:.65}
+.hero .label,.hero .deck{color:var(--on-photo)}
+.hero .label{opacity:.85}
+h1,h2,h3{font-family:var(--f-display);font-weight:800;letter-spacing:-.02em}
+header h1{font-weight:900;font-stretch:118%;font-size:clamp(2.6rem,12.5vw,5.2rem);letter-spacing:-.035em;line-height:.95}
+header h1 em{position:relative;color:var(--on-photo);font-style:normal;display:inline-block}
+header h1 em::after{content:"";position:absolute;inset:-.08em -.16em -.12em -.1em;border:.05em solid var(--pen-photo);border-radius:52% 48% 55% 45%/60% 52% 48% 40%;transform:rotate(-3deg);pointer-events:none}
+.deck{font-size:1.15rem;line-height:1.55;max-width:32rem;font-weight:400}
+.label,.tag,.chip,.vs,footer,.cols .t,.steplab,.stamp,.ph{font-family:var(--f-label)}
+.label{font-size:.74rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase}
+.vs,.chip,footer{font-size:.78rem;font-weight:500;letter-spacing:.02em}
+.stamp{font-weight:800;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;color:var(--pen-photo);border:2px solid var(--pen-photo);border-radius:3px;padding:.1rem .5rem;transform:rotate(-4deg);display:inline-block}
+.kicker{border-bottom:2px solid var(--fg);padding-bottom:.4rem}
+.kicker::before{content:none}
+section h2{font-weight:800;font-size:clamp(1.8rem,7vw,2.5rem)}
+.draft{font-family:var(--f-pen);font-weight:700;font-size:1.2rem;letter-spacing:0;text-transform:none;color:var(--warn);background:none;padding:0;border-radius:0;transform:rotate(-1deg);transform-origin:left}
+.tool{background:var(--surface);border:2px solid var(--edge);border-top:2px solid var(--edge);border-radius:8px;box-shadow:6px 6px 0 var(--shade)}
+.tool::before{content:"Try it: tap an option";font-family:var(--f-pen);font-size:1.35rem;font-weight:700;letter-spacing:0;text-transform:none;color:var(--accent);transform:rotate(-1.5deg);transform-origin:left;margin-bottom:-.2rem}
+.steplab{font-size:.72rem;font-weight:600;letter-spacing:.1em}
+.steplab i{background:none;color:var(--accent);border:1.5px solid var(--accent);font-style:normal;font-family:var(--f-display)}
+.seg button,.toggle button,.pbtn{font-family:var(--f-display);font-weight:700;border:2px solid var(--edge);border-radius:8px;background:var(--surface);color:var(--fg);box-shadow:0 3px 0 var(--edge)}
+.seg button:hover,.toggle button:hover{background:var(--accent-soft);border-color:var(--edge)}
+.seg button[aria-pressed="true"],.toggle button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--edge);box-shadow:0 3px 0 var(--edge)}
+.stop .dot{background:var(--surface);border:2px solid var(--edge);box-shadow:0 2px 0 var(--edge);font-family:var(--f-display);font-weight:700}
+.stop[aria-selected="true"] .dot{background:var(--accent);border-color:var(--edge);color:var(--accent-ink)}
+.stop .yr{font-family:var(--f-display);font-weight:800}
+.track::before{background:var(--edge);height:2px}
+.chip{border-radius:6px;border:1px solid var(--edge);color:var(--fg)}
+.view,.cols div{border-radius:6px;border:1px solid var(--line)}
+.view.glass{border:2px solid var(--accent)}
+.meter{border-radius:6px;border:2px solid var(--edge);background:var(--surface);height:.9rem}
+.meter i{background:var(--accent)}
+details{border-radius:6px;border:1px solid var(--edge);background:var(--surface)}
+summary{font-family:var(--f-display);font-weight:700}
+.tag{border-radius:4px;font-weight:800;letter-spacing:.08em}
+.tag.src{background:var(--warn-soft);color:var(--warn);border:1px solid var(--warn)}
+.ev li{border-left:3px solid var(--accent)}
+.ev .when{font-family:var(--f-label);font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent)}
+.lensbox{border-radius:8px;border:2px solid var(--edge);box-shadow:4px 4px 0 var(--shade)}
+.qrcard{border-radius:8px}
+@media (min-width:40rem) and (hover:hover) and (pointer:fine){.qrcard{border:2px solid var(--edge);border-radius:8px;box-shadow:5px 5px 0 var(--shade)}}
+.todo{background:var(--note);color:var(--note-ink);border-radius:4px;transform:rotate(-.6deg);box-shadow:3px 4px 0 var(--shade)}
+.todo b{font-family:var(--f-pen);font-size:1.4rem;font-weight:700}
+.sub{font-family:var(--f-display);font-weight:800}
+@media (prefers-reduced-motion:reduce){.pxbg{top:0;height:100%}}
+
+.chart{display:flex;flex-direction:column;gap:.9rem;padding:1.1rem;background:var(--surface);border:2px solid var(--edge);border-radius:8px;box-shadow:6px 6px 0 var(--shade)}
+.chart h2{margin:0}
+.lines{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.lines li{display:grid;grid-template-columns:6.2rem 1fr;align-items:center;gap:1rem;padding:.8rem 0;border-top:1px solid var(--line);min-width:0}
+.snel{font-family:var(--f-display);font-weight:900;font-stretch:125%;letter-spacing:.12em;line-height:1;color:var(--fg);white-space:nowrap}
+.lines div{display:flex;flex-direction:column;gap:.15rem;min-width:0}
+.lines a{font-family:var(--f-label);font-size:.78rem;font-weight:600;color:var(--accent)}
+.stamp.result{color:var(--accent);border-color:var(--accent);font-size:.95rem;align-self:flex-start;transform:rotate(-2deg);padding:.2rem .7rem}
+
+.src.refs li{display:block;padding-left:1.6rem;text-indent:-1.6rem}
+.models{display:flex;flex-direction:column;gap:.5rem}
+.models ul{margin:0;padding-left:1.2rem;display:flex;flex-direction:column;gap:.35rem}
+.models li::marker{color:var(--accent)}
+.lensctl{display:flex;flex-direction:column;gap:.75rem}
+/* Split tag replaces the handwritten notes */
+.tool::before{content:none;display:none}
+.trytag{display:inline-flex;align-self:flex-start;align-items:stretch;border:1.5px solid var(--accent);border-radius:6px;overflow:hidden;font-size:.82rem;line-height:1.3}
+.trytag span:first-child{background:var(--accent);color:var(--accent-ink);font-family:var(--f-label);font-weight:800;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;padding:.3rem .55rem;display:flex;align-items:center}
+.trytag span:last-child{font-family:var(--f-body);color:var(--fg);padding:.3rem .65rem;display:flex;align-items:center}
+.draft{font-family:var(--f-body);font-style:italic;font-weight:400;font-size:.88rem;color:var(--muted);transform:none;letter-spacing:0}
+.todo b{font-family:var(--f-display);font-size:1.05rem;font-weight:800}
+
+.ctrack{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;gap:0;border-radius:6px}
+.ctrack::-webkit-scrollbar{display:none}
+.cslide{flex:0 0 100%;scroll-snap-align:start;display:flex;flex-direction:column;gap:.6rem;padding:1rem;border-radius:6px;border:1px solid var(--line);border-top:4px solid var(--accent);background:var(--surface);min-width:0}
+.cslide.opp{border-top-color:var(--warn)}
+.cslide h3{font-size:1.25rem}
+.ckind{font-family:var(--f-label);font-weight:800;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.cslide.opp .ckind{color:var(--warn)}
+.cbasis{font-family:var(--f-label);font-size:.76rem;font-weight:600;color:var(--muted);margin-top:auto;padding-top:.4rem;border-top:1px solid var(--line)}
+.cnav{display:flex;align-items:center;gap:.6rem}
+.cbtn{font-family:var(--f-display);font-weight:800;font-size:1.1rem;width:2.6rem;height:2.6rem;border-radius:8px;border:2px solid var(--edge);background:var(--surface);color:var(--fg);cursor:pointer;box-shadow:0 3px 0 var(--edge);flex:none}
+.cbtn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--edge)}
+.cdots{display:flex;gap:.4rem;flex:1;justify-content:center}
+.cdot{width:.7rem;height:.7rem;border-radius:50%;border:1.5px solid var(--edge);background:transparent;padding:0;cursor:pointer}
+.cdot[aria-current="true"]{background:var(--accent);border-color:var(--accent)}
+.ccount{font-family:var(--f-label);font-size:.78rem;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;min-width:2.6rem;text-align:center}
+</style>
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="px hero"><img class="pxbg" src="img/hero.jpg" alt="" width="1600" height="1000"><div class="wrap"><span class="ph">Photo 1 &middot; Pexels</span>
+<header>
+  <div class="byline"><span class="label">ETEC 523 &middot; Assignment 1 &middot; Ken Peterson</span></div>
+  <h1>Passing the <em>Eye</em> Test</h1>
+  <p class="deck">Smart glasses are becoming increasingly popular and are finding their way into the classroom. Many are focusing on cheating and privacy concerns, but are there potential benefits that we might not be seeing? Let's take a look.</p>
+</header>
+</div></div>
+<div class="wrap">
+<section class="chart" id="test" aria-labelledby="chartH">
+  <h2 id="chartH" class="label">The eye test</h2>
+  <p>Do smart glasses pass the eye test? Are the benefits clear? Are there too many risks?</p>
+  <ol class="lines">
+    <li><span class="snel" aria-hidden="true" style="font-size:3.4rem">E</span><div><b>Clear.</b> Does it help students see and hear the lesson?<a href="#s2">Section 1</a></div></li>
+    <li><span class="snel" aria-hidden="true" style="font-size:2.2rem">F P</span><div><b>Fair.</b> Does it keep exams honest and access equal?<a href="#s3">Section 2</a></div></li>
+    <li><span class="snel" aria-hidden="true" style="font-size:1.5rem">T O Z</span><div><b>Effective.</b> Does it improve learning, or just deliver answers faster?<a href="#s4">Section 3</a></div></li>
+    <li><span class="snel" aria-hidden="true" style="font-size:1.05rem">L P E D</span><div><b>Safe.</b> Does it respect the privacy of people in the room?<a href="#s4">Section 3</a></div></li>
+  </ol>
+</section>
+<aside class="qrcard" aria-label="Open this page on your phone">
+  <div class="qrtile"><svg role="img" aria-label="QR code that opens this page" shape-rendering="crispEdges" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 33 33" class="segno"><path class="qrline" stroke="#000" d="M0 0.5h7m3 0h1m5 0h1m2 0h1m1 0h3m2 0h7m-33 1h1m5 0h1m3 0h1m1 0h1m2 0h2m3 0h2m4 0h1m5 0h1m-33 1h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h3m4 0h2m3 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h1m6 0h1m1 0h1m1 0h1m1 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h4m2 0h3m1 0h1m1 0h4m2 0h1m1 0h3m1 0h1m-33 1h1m5 0h1m1 0h1m1 0h4m4 0h1m2 0h2m1 0h1m1 0h1m5 0h1m-33 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-25 1h5m3 0h1m3 0h2m-22 1h1m1 0h5m2 0h3m1 0h1m2 0h3m1 0h1m1 0h3m1 0h5m-31 1h3m1 0h2m1 0h2m2 0h3m2 0h1m2 0h1m1 0h1m1 0h1m2 0h2m1 0h2m1 0h1m-33 1h2m3 0h2m4 0h5m1 0h2m5 0h3m1 0h1m1 0h1m-30 1h4m2 0h1m2 0h1m1 0h2m1 0h1m3 0h1m1 0h2m1 0h2m2 0h5m-33 1h2m1 0h1m1 0h2m4 0h1m2 0h1m2 0h2m1 0h1m1 0h1m1 0h2m1 0h3m1 0h2m-32 1h1m2 0h1m3 0h5m2 0h1m4 0h4m2 0h1m2 0h1m1 0h2m-27 1h4m1 0h5m1 0h2m1 0h3m2 0h2m1 0h2m1 0h1m-32 1h2m2 0h2m2 0h2m3 0h3m2 0h1m1 0h4m1 0h3m1 0h2m-30 1h1m1 0h1m2 0h3m1 0h2m1 0h1m1 0h1m1 0h2m1 0h1m1 0h1m2 0h1m1 0h2m1 0h1m1 0h1m-33 1h4m1 0h1m1 0h2m1 0h1m3 0h1m1 0h1m1 0h2m1 0h3m2 0h2m1 0h2m1 0h1m-33 1h1m5 0h1m2 0h2m1 0h2m1 0h1m8 0h1m2 0h2m1 0h2m-32 1h1m2 0h1m1 0h1m2 0h3m2 0h1m1 0h2m2 0h5m1 0h1m1 0h5m-32 1h1m2 0h2m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m1 0h3m2 0h4m3 0h1m2 0h1m-33 1h2m3 0h1m3 0h1m2 0h2m1 0h1m1 0h1m2 0h2m1 0h1m1 0h2m3 0h1m1 0h1m-33 1h1m1 0h1m1 0h1m1 0h2m1 0h1m2 0h1m2 0h3m2 0h1m3 0h1m1 0h1m2 0h3m-32 1h1m3 0h1m4 0h1m4 0h1m1 0h1m1 0h1m1 0h2m3 0h2m1 0h1m1 0h1m1 0h1m-33 1h1m1 0h1m3 0h2m3 0h2m1 0h1m1 0h2m1 0h1m2 0h1m1 0h6m2 0h1m-25 1h1m2 0h2m1 0h1m1 0h1m1 0h5m1 0h1m3 0h1m1 0h1m1 0h1m-33 1h7m3 0h1m4 0h4m1 0h5m1 0h1m1 0h1m1 0h2m-32 1h1m5 0h1m1 0h1m1 0h2m1 0h1m1 0h1m2 0h7m3 0h3m1 0h1m-33 1h1m1 0h3m1 0h1m1 0h1m1 0h2m5 0h3m2 0h1m1 0h6m1 0h2m-33 1h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h1m4 0h1m1 0h5m2 0h1m1 0h3m-33 1h1m1 0h3m1 0h1m1 0h4m2 0h4m2 0h1m2 0h2m1 0h2m1 0h2m-31 1h1m5 0h1m2 0h1m9 0h1m1 0h3m4 0h1m1 0h1m-31 1h7m1 0h1m1 0h1m1 0h2m1 0h1m1 0h1m4 0h3m1 0h2m3 0h1"/></svg></div>
+  <div class="qrtext"><b>This page was built for mobile</b><span>Scan to open this page on your phone.</span><code>https://kenpeterson2112.github.io/A1-Smartglasses-ETEC523/</code></div>
+</aside>
+
+<section id="s1">
+  <div class="kicker label">Timeline</div>
+  <h2>The progression towards smart glasses</h2>
+  <p>When I started university in 2003, very few students had cellphones and even fewer had laptops. By 2010 nearly every student in my B.Ed program had a laptop but smartphones were still rare. Now smartphones are ubiquitous and wearable smart devices like watches and glasses are proliferating rapidly.</p>
+  <div class="tool">
+    <span class="trytag"><span>Interactive</span><span>Tap an option</span></span>
+    <div class="track" role="tablist" aria-label="Device timeline">
+      <button class="stop" role="tab" aria-selected="true" data-i="0"><span class="dot">1</span><span class="yr">2003</span></button>
+      <button class="stop" role="tab" aria-selected="false" data-i="1"><span class="dot">2</span><span class="yr">2010</span></button>
+      <button class="stop" role="tab" aria-selected="false" data-i="2"><span class="dot">3</span><span class="yr">2017</span></button>
+      <button class="stop" role="tab" aria-selected="false" data-i="3"><span class="dot">4</span><span class="yr">2026</span></button>
+    </div>
+    <div class="panel" id="tl-panel" aria-live="polite"></div>
+  </div>
+</section>
+
+<section id="s2">
+  <div class="kicker label">1 &middot; What exists</div>
+  <h2>How glasses compare with what students already wear</h2>
+  <p>"Smart glasses" covers a wide range. <a href="https://nationalcentreforai.jiscinvolve.org/wp/2026/01/28/smart-glasses-in-education/">Jisc's National Centre for AI</a> compares models from a wide range of options, including $105 audio-only frames to $6,770 comprehensive assistive devices that go beyond the capabilities of other kinds of devices.</p>
+  <div class="models">
+    <span class="label">Models on sale now</span>
+    <ul>
+      <li><b>Ray-Ban Meta:</b> camera and AI assistant, no display. $560&ndash;715</li>
+      <li><b>Meta Ray-Ban Display:</b> adds an in-lens display. $1,130</li>
+      <li><b>XRAI ar2:</b> live captions of speech. $1,315</li>
+      <li><b>Envision:</b> describes surroundings aloud for blind and low-vision users. $4,060&ndash;6,770</li>
+    </ul>
+    <span class="draft">Prices from Jisc, converted to Canadian dollars at mid-October 2026 rates.</span>
+  </div>
+  <p>Use the interactive below to compare four common mobile and wearable form factors.</p>
+  <div class="tool">
+    <span class="trytag"><span>Interactive</span><span>Tap an option</span></span>
+    <div class="seg c4" role="group" aria-label="Device">
+      <button aria-pressed="true" data-d="0">Phone</button>
+      <button aria-pressed="false" data-d="1">Watch</button>
+      <button aria-pressed="false" data-d="2">Earbuds</button>
+      <button aria-pressed="false" data-d="3">Glasses</button>
+    </div>
+    <div id="cmp"></div>
+    <span class="draft">Comparison is my own judgment.</span>
+  </div>
+  <h3 class="sub">Smart glasses from different perspectives</h3>
+  <p>Explore this hypothetical Grade 5 math lesson through display glasses, worn by a student or by the teacher. Everything on the lens uses a feature listed for a current model. The room, the lesson and the people are invented.</p>
+  <div class="tool">
+    <span class="trytag"><span>Interactive</span><span>Tap an option</span></span>
+    <div class="lensctl">
+    <div class="steplab"><i>1</i>Choose your role</div>
+    <div class="seg c2" role="group" aria-label="Whose lens">
+      <button aria-pressed="true" data-lp="0">Student's seat</button>
+      <button aria-pressed="false" data-lp="1">Teacher's view</button>
+    </div>
+    <div class="steplab"><i>2</i><span id="featLab">Pick a student feature</span></div>
+    <div class="seg c3" role="group" aria-label="Lens mode" id="modeRow">
+      <button aria-pressed="true" data-lm="0">Captions</button>
+      <button aria-pressed="false" data-lm="1">Translate</button>
+      <button aria-pressed="false" data-lm="2">Ask</button>
+    </div>
+    </div>
+    <div class="lensbox" id="lensBox"><canvas id="lensCanvas" role="img" aria-label="Animated first-person view from a student's desk looking at a whiteboard and teacher, with a heads-up display showing live captions, translation or an AI answer"></canvas></div>
+    <div class="stack" id="lensNotes">
+      <div class="slot on"><p>Live captions of the teacher's voice. Jisc lists glasses that caption speech in real time for deaf and hard of hearing users, such as the XRAI ar2.</p><p class="vs">Source: Jisc, Jan 2026</p></div>
+      <div class="slot"><p>Real-time translation, listed for the Meta Ray-Ban Display. A student still learning English could follow the lesson as it happens. Spanish is only an example.</p><p class="vs">Source: Jisc, Jan 2026</p></div>
+      <div class="slot"><p>An AI answer about what the wearer is looking at, as described in Meta's July 2026 update. The same feature that helps one student understand is a shortcut on a quiz for another. The answer shown is an illustration, not a recorded output.</p><p class="vs">Source: Tech2, July 2026</p></div>
+      <div class="slot"><p>Calendar items shown in the lens, listed in Meta's July 2026 update. It is a small feature, but it keeps a teacher's eyes on the room instead of on a phone, in my view.</p><p class="vs">Source: Tech2, July 2026</p></div>
+      <div class="slot"><p>A student speaks Spanish and the teacher reads English. Translation is listed for the Meta Ray-Ban Display. It could help with newcomer students and family conversations. I have not tested how it copes with a noisy classroom.</p><p class="vs">Source: Jisc, Jan 2026</p></div>
+      <div class="slot"><p>A photo of a student's work, taken hands free. Photo capture is a listed feature. Jisc reports that recording indicators exist but have been bypassed, so in a classroom this is a consent and policy question before it is a convenience.</p><p class="vs">Source: Tech2, July 2026; Jisc, Jan 2026</p></div>
+    </div>
+    <div class="ctl"><button class="pbtn" id="lensPause" type="button">Pause</button><span class="label">Drag the view to look around the classroom through smart glasses</span></div>
+  </div>
+</section>
+
+</div>
+<div class="px band"><img class="pxbg" src="img/band1.jpg" alt="" width="1600" height="2130" loading="lazy" style="object-position:50% 38%"><div class="wrap"><p class="pull">Bans and workarounds: institutional responses</p><span class="ph">Photo 2 &middot; Pexels</span></div></div>
+<div class="wrap">
+<section id="s3">
+  <div class="kicker label">2 &middot; The reality in schools</div>
+  <h2>Concerns about cheating are major concerns for schools and educators</h2>
+  <p>Pick an assessment format below to see what a lens could show the student in real time.</p>
+  <div class="tool">
+    <span class="trytag"><span>Interactive</span><span>Tap an option</span></span>
+    <div class="seg c3" role="group" aria-label="Assessment format">
+      <button aria-pressed="true" data-k="0">Recall quiz</button>
+      <button aria-pressed="false" data-k="1">Essay</button>
+      <button aria-pressed="false" data-k="2">Conversation</button>
+    </div>
+    <div class="stack" id="fmt-stack"></div>
+    <div>
+      <div class="row"><span class="label">Exposure to real-time answers</span><b id="m-val"></b></div>
+      <div class="meter"><i id="m-bar"></i></div>
+    </div>
+    <span class="draft">My own judgment, not measured data.</span>
+  </div>
+  <h3 class="sub">Recent developments in regulation</h3>
+  <ul class="src ev">
+    <li><span class="when">Jun 4, 2026 &middot; Ofqual</span><b>England's regulator is concerned.</b><span>Ofqual's chief regulator warned that gadgets such as smart glasses could make cheating easier, and said Ofqual has to "move really fast, because technology is moving fast".</span></li>
+    <li><span class="when">Jul 30, 2026 &middot; Meta</span><b>Glasses can answer questions about what the wearer is looking at.</b><span>A Meta Ray-Ban Display update adds an in-lens display and contextual AI answers.</span></li>
+    <li><span class="when">Current policy &middot; College Board</span><b>The SAT bans them.</b><span>The College Board lists smart glasses among the wearable devices prohibited on test day. Its page does not say when they were added.</span></li>
+  </ul>
+  <h3 class="sub">Solutions and workarounds</h3>
+  <p>Some educators are already handling the emergence of smart glasses in a different way, by changing what they assess and how. Conversations, portfolios, process evidence, ungrading, and other approaches that are more resistant to quick answers supplied by smart devices.</p>
+</section>
+
+<section id="s4">
+  <div class="kicker label">3 &middot; Educational merit</div>
+  <h2>What glasses add, and what they cost</h2>
+  <p>Each card compares glasses with the tool a teacher would use today.</p>
+  <div class="tool">
+    <span class="trytag"><span>Interactive</span><span>Swipe or use the arrows</span></span>
+    <div class="carousel" id="carousel" role="region" aria-roledescription="carousel" aria-label="Opportunities and challenges">
+      <div class="ctrack" id="ctrack" tabindex="0"></div>
+    </div>
+    <div class="cnav">
+      <button class="cbtn" id="cprev" type="button" aria-label="Previous card">&#8592;</button>
+      <div class="cdots" id="cdots"></div>
+      <span class="ccount" id="ccount">1 / 6</span>
+      <button class="cbtn" id="cnext" type="button" aria-label="Next card">&#8594;</button>
+    </div>
+  </div>
+</section>
+
+</div>
+<div class="px band"><img class="pxbg" src="img/band2.jpg" alt="" width="1600" height="900" loading="lazy"><div class="wrap"><p class="pull">Do smart glasses pass the eye test?</p><span class="ph">Photo 3 &middot; Pexels</span></div></div>
+<div class="wrap">
+<section id="s5">
+  <div class="kicker label">The result</div>
+  <h2>Intentional, not unrestricted</h2>
+  <span class="stamp result">Result: passes, with conditions</span>
+  <p>I am not arguing that smart glasses should come without rules, but smart glasses are just another kind of technology. Metal can be sharpened into a sword or a sickle and it is up to the creator and the wielder to decide on purpose which one they are making and how they'll use it. Every tool carries the possibility of abuse, and the more powerful a tool is, the more important it is to set firm limits on how it can be used. The potential harms are real, such as cheating on exams, and the surreptitious filming of others without their knowledge, but we should not stop looking for what these tools can do well and could do even better as they are developed further and teaching practices catch up.</p>
+  <p>Calculators were once banned and smartphones are still banned in many places, so I fully anticipate waves of bans and restrictions on smart glasses over the next few years. But one day, I do believe that they will be widely accepted as just another kind of technology whose affordances allow for unique and impactful learning experiences in classrooms that embrace their use in thoughtful and well-designed ways.</p>
+</section>
+
+<section id="s6">
+  <div class="kicker label">References</div>
+  <ul class="src refs">
+    <li>Brill, J. M. (2010). Situated cognition. In M. Orey (Ed.), <i>Emerging perspectives on learning, teaching, and technology</i> (pp. 50&ndash;54). Global Text Project. <a href="https://textbookequity.org/Textbooks/Orey_Emergin_Perspectives_Learning.pdf">https://textbookequity.org/Textbooks/Orey_Emergin_Perspectives_Learning.pdf</a></li>
+    <li>Gee, J. P. (2005). Learning by design: Good video games as learning machines. <i>E-Learning, 2</i>(1), 5&ndash;16. <a href="https://doi.org/10.2304/elea.2005.2.1.5">https://doi.org/10.2304/elea.2005.2.1.5</a></li>
+    <li>Orey, M. (Ed.). (2010). <i>Emerging perspectives on learning, teaching, and technology</i>. Global Text Project. <a href="https://textbookequity.org/Textbooks/Orey_Emergin_Perspectives_Learning.pdf">https://textbookequity.org/Textbooks/Orey_Emergin_Perspectives_Learning.pdf</a></li>
+  </ul>
+  <span class="label sub2">Other sources</span>
+  <ul class="src">
+    <li><b>Smart glasses in education</b><span>Jisc National Centre for AI, Jan 2026 (updated Feb 2026). Compares devices, covers accessibility and privacy, and does not address assessment.</span><a href="https://nationalcentreforai.jiscinvolve.org/wp/2026/01/28/smart-glasses-in-education/">nationalcentreforai.jiscinvolve.org</a></li>
+    <li><b>Meta Ray-Ban Display update, July 30, 2026</b><span>Tech2 coverage of the in-lens display and contextual AI answers.</span><a href="https://www.tech2.com/tech2/meta-ray-ban-display-glasses-get-a-long-awaited-ai-upgrade-plus-threads-and-better-cameras-text-10240578.html">tech2.com</a></li>
+    <li><b>Prohibited Devices, SAT Suite</b><span>College Board. Lists smart glasses among prohibited wearable technology.</span><a href="https://satsuite.collegeboard.org/sat/what-to-bring-do/prohibited-devices">satsuite.collegeboard.org</a></li>
+    <li><b>Ofqual must move 'really fast' on smart tech cheating, says chief regulator</b><span>Esm&eacute; Kenney, Schools Week, June 4, 2026. Quotes the chief regulator directly.</span><a href="https://schoolsweek.co.uk/?p=247210">schoolsweek.co.uk</a></li>
+  </ul>
+  <span class="label sub2">Images</span>
+  <ul class="src">
+    <li><b>Photo 1, title banner</b><span>Nguyen, T. A. (2024, October 18). <i>Sunlit empty school corridor with lockers</i> [Photograph]. Pexels. Free to use under the Pexels license.</span><a href="https://www.pexels.com/photo/sunlit-empty-school-corridor-with-lockers-28987495/">pexels.com/photo/sunlit-empty-school-corridor-with-lockers-28987495</a></li>
+    <li><b>Photo 2, first band</b><span>Hein, H. M. (n.d.). <i>Symmetrical modern architecture of a corridor</i> [Photograph]. Pexels. Free to use under the Pexels license.</span><a href="https://www.pexels.com/photo/symmetrical-modern-architecture-of-a-corridor-37256484/">pexels.com/photo/symmetrical-modern-architecture-of-a-corridor-37256484</a></li>
+    <li><b>Photo 3, second band</b><span>Olmos, M. (2023, November 27). <i>Corridor with triangular windows</i> [Photograph]. Pexels. Free to use under the Pexels license.</span><a href="https://www.pexels.com/photo/corridor-with-triangular-windows-19285006/">pexels.com/photo/corridor-with-triangular-windows-19285006</a></li>
+  </ul>
+</section>
+
+<footer><span>Built mobile-first. Best viewed on a phone.</span></footer>
+</div>
+
+<script>
+(function(){
+  function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+
+  var stops=[
+    {t:"2003: The laptop is rare",b:"A few students carry laptops. Most take notes by hand and research happens in the library.",c:["Notebooks","Library","Few laptops"]},
+    {t:"2010: The laptop is everywhere",b:"By my B.Ed every student has one. Phones in the same room still have flip lids and slide-out keyboards, so the worry is screens in lectures.",c:["All laptops","Flip phones","Slide-out keyboards"]},
+    {t:"2017: The phone is everywhere",b:"Smartphones are close to universal. Schools debate bans, and an answer to any question is in every pocket.",c:["Near-universal smartphones","Search in the pocket","Bans debated"]},
+    {t:"2026: The display is in the frame",b:"Glasses with an in-lens display and an AI assistant are on sale now. The SAT and England's exam regulator are already responding, and schools are debating their own rules.",c:["Widely available now","In-lens display","Bans in place and expanding"]}
+  ];
+  var panel=document.getElementById('tl-panel'),tabs=document.querySelectorAll('.stop');
+  stops.forEach(function(s){
+    var d=el('div','slot');
+    d.appendChild(el('h3',null,s.t));d.appendChild(el('p',null,s.b));
+    var c=el('div','chips');s.c.forEach(function(x){c.appendChild(el('span','chip',x))});d.appendChild(c);
+    panel.appendChild(d);
+  });
+  function showStop(i){
+    for(var j=0;j<panel.children.length;j++){panel.children[j].classList.toggle('on',j==i)}
+    tabs.forEach(function(b,j){b.setAttribute('aria-selected',j==i?'true':'false')});
+  }
+  tabs.forEach(function(b){b.addEventListener('click',function(){showStop(+b.dataset.i)})});
+  showStop(0);
+
+  var rows=["Screen","Camera","Hands free","Visible to others"];
+  var dev=[
+    ["Full screen","Yes","No","Obvious"],
+    ["Small screen","On few models","Partly","Fairly obvious"],
+    ["None","None","Yes","Easy to miss"],
+    ["In-lens on some models","Yes on some models","Yes","Easy to miss; indicators can be bypassed"]
+  ];
+  var cmp=document.getElementById('cmp'),db=document.querySelectorAll('[data-d]');
+  dev.forEach(function(v){
+    var s=el('div','slot cols');
+    rows.forEach(function(r,i){var d=el('div');d.appendChild(el('span','t',r));d.appendChild(el('span',null,v[i]));s.appendChild(d)});
+    cmp.appendChild(s);
+  });
+  function showDev(k){
+    for(var j=0;j<cmp.children.length;j++){cmp.children[j].classList.toggle('on',j==k)}
+    db.forEach(function(b,j){b.setAttribute('aria-pressed',j==k?'true':'false')});
+  }
+  db.forEach(function(b){b.addEventListener('click',function(){showDev(+b.dataset.d)})});
+  showDev(0);
+
+  var fm=[
+    {q:"Name the three branches of government.",t:"A student looks at the page, then at the ceiling, then writes.",l:"The answer could sit in the corner of the lens, already worded.",v:95,r:"Very exposed"},
+    {q:"To what extent was the assassination of Archduke Ferdinand the primary cause of World War I?",t:"A student writes for forty minutes at a desk.",l:"An outline with a thesis and examples could appear for the student to reword.",v:55,r:"Exposed"},
+    {q:"How did the emergence of television and mass media affect the Civil Rights Movement in the 1950s and 1960s? Do you see any parallels or differences in the present day?",t:"A student talks through a decision and answers follow-up questions.",l:"Prompts could still appear, but follow-ups depend on how well the student understands.",v:20,r:"Resilient"}
+  ];
+  var fb=document.querySelectorAll('[data-k]');
+  var stack=document.getElementById('fmt-stack');
+  fm.forEach(function(f){
+    var s=el('div','slot');
+    s.appendChild(el('p','q',f.q));
+    var l=el('div','lens');
+    var a=el('div','view');a.appendChild(el('span','label','What the teacher sees'));a.appendChild(el('p',null,f.t));
+    var b=el('div','view glass');b.appendChild(el('span','label','What the lens could show'));b.appendChild(el('p',null,f.l));
+    l.appendChild(a);l.appendChild(b);s.appendChild(l);stack.appendChild(s);
+  });
+  var slots=stack.children;
+  function showFmt(k){
+    var f=fm[k];
+    for(var i=0;i<slots.length;i++){slots[i].classList.toggle('on',i==k)}
+    document.getElementById('m-val').textContent=f.r;
+    document.getElementById('m-bar').style.width=f.v+'%';
+    fb.forEach(function(b,j){b.setAttribute('aria-pressed',j==k?'true':'false')});
+  }
+  fb.forEach(function(b){b.addEventListener('click',function(){showFmt(+b.dataset.k)})});
+  showFmt(0);
+
+  var slides=[
+    {k:"o",h:"Learning where it is used",p:"Smart glasses deliver information directly to the user in the setting where it will be used, at the moment it is needed. This supports more transferable learning (Brill, 2010, pp. 50&ndash;51; Gee, 2005, p. 11).",vs:"Compared with: a worksheet or screen away from the task.",b:"Based on research"},
+    {k:"c",h:"Scaffolding that never fades",p:"Always-on smart glasses risk becoming scaffolding that never fades, supplying answers in place of the elaboration that builds durable memory and independent, self-regulated learning (Orey, 2010, pp. 26&ndash;27, 226&ndash;228). The Ask mode above shows it in miniature: the answer arrives, the steps do not.",vs:"Compared with: a teacher's scaffold, which is withdrawn as the student gains skill.",b:"Based on research"},
+    {k:"o",h:"Expertise shared between person and tool",p:"As wearable smart tools, smart glasses carry built-in knowledge. That frees learners to focus on when, where and why to act, with expertise distributed between the person and the tool (Gee, 2005, pp. 8&ndash;9). Meta's display glasses already give contextual answers about what the wearer is looking at.",vs:"Compared with: a reference book, which has to be carried and opened.",b:"Based on research"},
+    {k:"c",h:"Privacy",p:"Jisc reports a clear divide between owners and non-owners. Some people filmed without knowing, recording indicators have been bypassed, and Meta's glasses allow user data for AI training unless users object.",vs:"Compared with: phones, where recording is at least visible.",b:"From the Jisc report"},
+    {k:"o",h:"Teaching students to check, not just recall",p:"When any answer arrives instantly, judging it becomes the skill: is it right, where did it come from, who chose what came back. The ease and rapidity of instantaneous answers delivered right to their field of vision may stunt student development in this area.",vs:"Compared with: a library skills unit, which covers sources but not live answers.",b:"My own view"},
+    {k:"c",h:"Cost and equity",p:"Prices, in Canadian dollars, run from $1,130 for a display model to over $3,750 for assistive ones. Budget frames cost $40 to $190 but have unclear privacy policies. As with $300 iPad fleets, a classroom set is out of reach for most schools.",vs:"Compared with: a durable phone-class device near $100, which schools could actually buy.",b:"My own view, with prices from Jisc"}
+  ];
+  var track=document.getElementById('ctrack'),dots=document.getElementById('cdots'),cnt=document.getElementById('ccount');
+  slides.forEach(function(x,i){
+    var d=el('article','cslide '+(x.k==='o'?'opp':'chal'));
+    d.setAttribute('aria-roledescription','slide');d.setAttribute('aria-label',(i+1)+' of '+slides.length);
+    d.appendChild(el('span','ckind',x.k==='o'?'Opportunity':'Challenge'));
+    d.appendChild(el('h3',null,x.h));
+    var p=el('p');p.innerHTML=x.p;d.appendChild(p);
+    d.appendChild(el('p','vs',x.vs));
+    track.appendChild(d);
+    var dot=el('button','cdot');dot.type='button';dot.setAttribute('aria-label','Card '+(i+1));
+    dot.addEventListener('click',function(){stopAuto();go(i)});dots.appendChild(dot);
+  });
+  var cur=0,auto=null;
+  function mark(i){cur=i;cnt.textContent=(i+1)+' / '+slides.length;[].forEach.call(dots.children,function(d,j){d.setAttribute('aria-current',j===i?'true':'false')})}
+  function go(i){i=(i+slides.length)%slides.length;track.scrollTo({left:track.children[i].offsetLeft-track.offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});mark(i)}
+  function stopAuto(){if(auto){clearInterval(auto);auto=null}}
+  document.getElementById('cprev').addEventListener('click',function(){stopAuto();go(cur-1)});
+  document.getElementById('cnext').addEventListener('click',function(){stopAuto();go(cur+1)});
+  var st;track.addEventListener('scroll',function(){clearTimeout(st);st=setTimeout(function(){var i=Math.round(track.scrollLeft/track.clientWidth);if(i!==cur)mark(Math.max(0,Math.min(slides.length-1,i)))},80)},{passive:true});
+  ['pointerdown','touchstart','wheel','keydown','focusin'].forEach(function(ev){track.addEventListener(ev,stopAuto,{passive:true})});
+  track.addEventListener('keydown',function(e){if(e.key==='ArrowRight'){go(cur+1)}else if(e.key==='ArrowLeft'){go(cur-1)}});
+  mark(0);
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches&&'IntersectionObserver' in window){
+    var vis=false;new IntersectionObserver(function(es){vis=es[0].isIntersecting}).observe(track);
+    auto=setInterval(function(){if(vis&&!document.hidden)go(cur+1)},8000);
+  }
+})();
+
+/* Lens simulation: student and teacher views. Only features listed for current display glasses. */
+(function(){
+  var canvas=document.getElementById('lensCanvas');if(!canvas)return;
+  var ctx=canvas.getContext('2d'),box=document.getElementById('lensBox'),pbtn=document.getElementById('lensPause');
+  var reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var HUD='#5fd6dc',INK='#f3f1ea',DIM='#9fb8ba';
+  var MONO='"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace';
+  var EN=["Today we compare fractions with unlike denominators.","Find a common denominator, then compare the numerators.","Question one: which is greater, three fourths or five eighths?","You have five minutes. Raise your hand if you need help."];
+  var ES=["Hoy comparamos fracciones con denominadores distintos.","Busquen un denominador común y luego comparen los numeradores.","Pregunta uno: ¿cuál es mayor, tres cuartos o cinco octavos?","Tienen cinco minutos. Levanten la mano si necesitan ayuda."];
+  var SPK_ES=["¿Puede explicar la primera pregunta otra vez?","No entiendo cómo cambiar los denominadores.","¿Puedo usar las tiras de fracciones?"];
+  var SPK_EN=["Can you explain the first question again?","I don't understand how to change the denominators.","Can I use the fraction strips?"];
+  var LABELS=[["Captions","Translate","Ask"],["Schedule","Translate","Capture"]];
+  var TAGS=[["LIVE CAPTIONS","EN > ES","ASK"],["CALENDAR","ES > EN","CAMERA"]];
+  var ARIA=["Animated first-person view from a student's desk looking at a whiteboard and teacher, with a heads-up display showing live captions, translation or an AI answer","Animated first-person view from the front of a classroom looking at seated students, with a heads-up display showing calendar items, a translated student question or a photo being taken"];
+  var pers=0,mode=0,ms=0,W=0,H=0,s=1,dpr=1,t=0,last=0,playing=true,vis=false,running=false;
+  var camX=0,manual=0,dragging=false,lastX=0,idle=99;
+  var board={x:0,y:0,w:0,h:0},sheet={x:0,y:0,w:0,h:0};
+
+  function resize(){
+    dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=box.clientWidth;if(!w)return;
+    W=w;H=Math.round(w/(w<600?.95:1.6));
+    canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);
+    canvas.style.height=H+'px';s=H/500;
+  }
+  function sx(x,f){return W/2+(x-camX*f)*s}
+  function rr(x,y,w,h,r){ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x,y,w,h,r);else ctx.rect(x,y,w,h)}
+  function circ(x,y,r){ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill()}
+  function wrap(text,maxW){
+    var words=text.split(' '),lines=[],cur='';
+    words.forEach(function(w){var test=cur?cur+' '+w:w;if(ctx.measureText(test).width>maxW&&cur){lines.push(cur);cur=w}else cur=test});
+    if(cur)lines.push(cur);return lines;
+  }
+  function clockStr(){
+    var sec=(10*3600+42*60+(t%1200))|0,h=(sec/3600)|0,m=((sec%3600)/60)|0;
+    return h+':'+(m<10?'0':'')+m;
+  }
+
+  /* ---------- shared room pieces ---------- */
+  function wallFill(hz){var g=ctx.createLinearGradient(0,0,0,hz);g.addColorStop(0,'#394044');g.addColorStop(1,'#4b514f');ctx.fillStyle=g;ctx.fillRect(0,0,W,hz)}
+  function floor(hz){
+    var g=ctx.createLinearGradient(0,hz,0,H);g.addColorStop(0,'#5b5044');g.addColorStop(1,'#2d2721');ctx.fillStyle=g;ctx.fillRect(0,hz,W,H-hz);
+    ctx.strokeStyle='rgba(0,0,0,.18)';ctx.lineWidth=1;
+    for(var i=-10;i<=10;i++){ctx.beginPath();ctx.moveTo(sx(i*110,.5),hz);ctx.lineTo(sx(i*330,1.2),H);ctx.stroke()}
+  }
+  function windowAt(wx){
+    var x=sx(wx,.45),w=120*s,lg=ctx.createLinearGradient(x,50*s,x+w,190*s);
+    lg.addColorStop(0,'#9fb7c9');lg.addColorStop(1,'#d9e3e6');
+    ctx.fillStyle='#2b2f31';ctx.fillRect(x-4*s,46*s,w+8*s,150*s);
+    ctx.fillStyle=lg;ctx.fillRect(x,50*s,w,142*s);
+    ctx.fillStyle='#2b2f31';ctx.fillRect(x+w/2-2*s,50*s,4*s,142*s);
+    ctx.fillStyle='rgba(196,120,60,.55)';circ(x+w*.3,160*s,32*s);
+  }
+  function clockAt(wx,y){
+    var cx=sx(wx,.5),cy=y*s,cr=16*s;
+    ctx.fillStyle='#f2efe8';circ(cx,cy,cr);ctx.strokeStyle='#222';ctx.lineWidth=2*s;ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+cr*.55*Math.cos(-.6),cy+cr*.55*Math.sin(-.6));
+    ctx.moveTo(cx,cy);ctx.lineTo(cx+cr*.8*Math.cos(1.3),cy+cr*.8*Math.sin(1.3));ctx.stroke();
+  }
+  var SHIRTS=['#4c6378','#7a5a6a','#5f7357','#80694a','#4f5f8a','#6d4f4f'],TONES=['#8a6f5a','#6f5a4a','#a68466','#5b4a3e','#c09a77'],HAIR='rgba(24,17,12,.9)';
+
+  function back(x,y,k,i){
+    var b=reduce||!playing?0:Math.sin(t*1.2+i*1.7)*1.2*k;
+    ctx.fillStyle=SHIRTS[i%6];rr(x-27*k,y-46*k,54*k,48*k,14*k);ctx.fill();
+    ctx.fillStyle=HAIR;circ(x,y-62*k+b,16*k);
+  }
+  function front(x,y,k,i,hand,isSheet){
+    var b=reduce||!playing?0:Math.sin(t*1.2+i*1.7)*1.2*k;
+    if(hand){
+      var w=reduce||!playing?0:Math.sin(t*3+i)*4*k;
+      ctx.strokeStyle=SHIRTS[i%6];ctx.lineWidth=9*k;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(x+20*k,y-38*k);ctx.lineTo(x+30*k+w,y-96*k);ctx.stroke();
+      ctx.fillStyle=TONES[i%5];circ(x+30*k+w,y-100*k,5.5*k);
+    }
+    ctx.fillStyle=SHIRTS[i%6];rr(x-26*k,y-46*k,52*k,50*k,14*k);ctx.fill();
+    ctx.fillStyle=TONES[i%5];circ(x,y-62*k+b,16*k);
+    ctx.fillStyle=HAIR;ctx.beginPath();ctx.arc(x,y-66*k+b,16*k,Math.PI,0);ctx.fill();
+    ctx.fillStyle='#b89668';rr(x-48*k,y-4*k,96*k,12*k,3*k);ctx.fill();
+    ctx.fillStyle='#7d6446';ctx.fillRect(x-44*k,y+8*k,6*k,30*k);ctx.fillRect(x+38*k,y+8*k,6*k,30*k);
+    ctx.fillStyle='#f1efe9';ctx.fillRect(x-24*k,y-3*k,48*k,8*k);
+    if(isSheet){sheet={x:x-24*k,y:y-3*k,w:48*k,h:8*k}}
+  }
+
+  /* ---------- scenes ---------- */
+  function sceneStudent(){
+    var hz=250*s;wallFill(hz);floor(hz);windowAt(-560);
+    var bx=sx(-170,.5),bw=340*s,by=68*s,bh=150*s;
+    ctx.fillStyle='#8f9291';ctx.fillRect(bx-5*s,by-5*s,bw+10*s,bh+10*s);
+    ctx.fillStyle='#eef0ee';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle='#2f5d8a';ctx.font='600 '+(12*s)+'px '+MONO;ctx.fillText('Comparing fractions',bx+16*s,by+26*s);
+    ctx.fillStyle='#a03b3b';ctx.font='600 '+(30*s)+'px '+MONO;ctx.fillText('3/4  ?  5/8',bx+16*s,by+78*s);
+    ctx.fillStyle='#3d3d3d';ctx.font=(10*s)+'px '+MONO;
+    ctx.fillText('LG: I can compare fractions',bx+16*s,by+112*s);ctx.fillText('using a common denominator',bx+16*s,by+127*s);
+    board={x:bx+10*s,y:by+48*s,w:204*s,h:38*s};
+    clockAt(195,112);
+    // teacher beside the board
+    var tx=sx(225,.7),sp=playing&&!reduce?Math.abs(Math.sin(t*9)):0.3;
+    ctx.fillStyle='#4a3f52';ctx.fillRect(tx-14*s,262*s,10*s,40*s);ctx.fillRect(tx+4*s,262*s,10*s,40*s);
+    ctx.fillStyle='#5d4a6e';rr(tx-23*s,196*s,46*s,72*s,10*s);ctx.fill();
+    ctx.fillStyle='#c09a77';circ(tx,178*s,14*s);
+    ctx.fillStyle=HAIR;ctx.beginPath();ctx.arc(tx,175*s,14*s,Math.PI,0);ctx.fill();
+    ctx.fillStyle='#5a2d2d';ctx.beginPath();ctx.ellipse(tx,184*s,4*s,(1+2.4*sp)*s,0,0,7);ctx.fill();
+    [-400,-200,0,200,400].forEach(function(x,i){back(sx(x,.9),345*s,.72*s,i)});
+    [-300,-100,100,300].forEach(function(x,i){back(sx(x,1.05),418*s,.95*s,i+2)});
+    // own desk
+    var dy=H-78*s,g=ctx.createLinearGradient(0,dy,0,H);g.addColorStop(0,'#b99a6c');g.addColorStop(1,'#8a6c46');
+    ctx.fillStyle=g;ctx.fillRect(0,dy,W,78*s);ctx.fillStyle='rgba(255,255,255,.14)';ctx.fillRect(0,dy,W,2);
+    var wx=W/2-72*s;ctx.fillStyle='#efece4';ctx.fillRect(wx,dy+12*s,144*s,70*s);
+    ctx.strokeStyle='rgba(60,90,140,.35)';ctx.lineWidth=1;
+    for(var l=0;l<4;l++){ctx.beginPath();ctx.moveTo(wx+8*s,dy+44*s+l*10*s);ctx.lineTo(wx+136*s,dy+44*s+l*10*s);ctx.stroke()}
+    ctx.fillStyle='#555';ctx.font=(11*s)+'px '+MONO;ctx.fillText('1.  3/4  ?  5/8',wx+10*s,dy+34*s);
+  }
+  function sceneTeacher(){
+    var hz=210*s;wallFill(hz);floor(hz);
+    windowAt(-520);windowAt(-370);clockAt(195,84);
+    var pb=sx(330,.45);ctx.fillStyle='#7b5a3a';ctx.fillRect(pb,100*s,110*s,80*s);
+    ['#e2b85a','#7fb3c9','#d98a8a','#9cc48a'].forEach(function(c,i){ctx.fillStyle=c;ctx.fillRect(pb+(8+i*25)*s,(110+(i%2)*12)*s,20*s,26*s)});
+    [-400,-200,0,200,400].forEach(function(x,i){front(sx(x,.9),292*s,.66*s,i,false,false)});
+    [-420,-210,0,210,420].forEach(function(x,i){front(sx(x,1.05),380*s,.88*s,i+1,x===-210,x===0)});
+  }
+
+  /* ---------- HUD ---------- */
+  function corners(x,y,w,h,L,a){
+    ctx.strokeStyle=HUD;ctx.globalAlpha=a;ctx.lineWidth=Math.max(1.5,1.4*s);
+    ctx.beginPath();
+    ctx.moveTo(x,y+L);ctx.lineTo(x,y);ctx.lineTo(x+L,y);
+    ctx.moveTo(x+w-L,y);ctx.lineTo(x+w,y);ctx.lineTo(x+w,y+L);
+    ctx.moveTo(x+w,y+h-L);ctx.lineTo(x+w,y+h);ctx.lineTo(x+w-L,y+h);
+    ctx.moveTo(x+L,y+h);ctx.lineTo(x,y+h);ctx.lineTo(x,y+h-L);
+    ctx.stroke();ctx.globalAlpha=1;
+  }
+  /* items: [{text,size,color,rev}] ; opts: {w, bottom | y, a} */
+  function panel(items,o){
+    var maxW=o.w||Math.min(W-28,560),pad=12,total=0,laid=[];
+    items.forEach(function(it){
+      ctx.font='500 '+it.size+'px '+MONO;
+      var lines=wrap(it.text,maxW-pad*2),lh=it.size*1.45;
+      laid.push({it:it,lines:lines,lh:lh});total+=lines.length*lh;
+    });
+    var ph=total+pad*1.4,px=(W-maxW)/2,py=o.y!=null?o.y:H-14-ph;
+    ctx.globalAlpha=o.a==null?1:o.a;
+    ctx.fillStyle='rgba(8,12,14,.8)';rr(px,py,maxW,ph,10);ctx.fill();
+    ctx.strokeStyle=HUD;ctx.globalAlpha=(o.a==null?1:o.a)*.5;ctx.lineWidth=1;ctx.stroke();
+    ctx.globalAlpha=o.a==null?1:o.a;
+    var yy=py+pad*.7;
+    laid.forEach(function(L){
+      ctx.font='500 '+L.it.size+'px '+MONO;ctx.fillStyle=L.it.color;
+      var tot=L.it.text.length,n=L.it.rev==null||reduce?tot:Math.floor(tot*L.it.rev),acc=0;
+      L.lines.forEach(function(ln){
+        var part=ln.slice(0,Math.max(0,Math.min(ln.length,n-acc)));acc+=ln.length+1;
+        yy+=L.lh;ctx.fillText(part,px+pad,yy-L.lh*.28);
+      });
+    });
+    ctx.globalAlpha=1;
+    return {x:px,y:py,w:maxW,h:ph};
+  }
+  function hud(){
+    var fs=Math.max(10,10.5*s),pad=14;
+    ctx.font='500 '+fs+'px '+MONO;ctx.fillStyle=HUD;
+    ctx.globalAlpha=.9;ctx.fillText('MATH · P2',pad,pad+fs);
+    ctx.globalAlpha=.65;ctx.fillText(clockStr(),pad,pad+fs*2.4);
+    var tag=TAGS[pers][mode],tw=ctx.measureText(tag).width;
+    ctx.globalAlpha=.95;ctx.fillText(tag,W-pad-tw,pad+fs);
+    circ(W-pad-tw-10,pad+fs-fs*.32,3);
+    ctx.globalAlpha=.5;var ex='EXAMPLE SCENE';ctx.fillText(ex,W-pad-ctx.measureText(ex).width,pad+fs*2.4);
+    ctx.globalAlpha=1;
+  }
+  function lensFx(){
+    var g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*.35,W/2,H/2,Math.max(W,H)*.75);
+    g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.55)');
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+    var sc=ctx.createLinearGradient(0,0,0,60);sc.addColorStop(0,'rgba(0,0,0,.6)');sc.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=sc;ctx.fillRect(0,0,W,60);
+    ctx.fillStyle='rgba(95,214,220,.03)';ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='rgba(0,0,0,.06)';for(var y=0;y<H;y+=3)ctx.fillRect(0,y,W,1);
+  }
+
+  /* ---------- mode overlays ---------- */
+  var cf=function(){return Math.max(12.5,15*s)},sf=function(){return Math.max(10.5,11.5*s)};
+  function overlay(){
+    var P=5,i=Math.floor(t/P)%4,ph=(t%P)/P,r=Math.min(1,ph/.55);
+    if(pers===0&&mode===0){panel([{text:EN[i],size:cf(),color:INK,rev:r}],{})}
+    else if(pers===0&&mode===1){panel([{text:ES[i],size:cf(),color:INK,rev:r}],{})}
+    else if(pers===0&&mode===2){
+      var u=(t-ms)%9;
+      corners(board.x-4*s,board.y-4*s,board.w+8*s,board.h+8*s,8*s,Math.min(1,u/.8)*(.65+.35*Math.sin(t*5)));
+      if(u>=1.6){panel([{text:'YOU ASKED',size:sf(),color:DIM},{text:'“Which is bigger?”',size:cf(),color:INK,rev:Math.min(1,(u-1.6)/1.2)}],{})}
+      if(u>=3.2&&u<8.8){
+        var a=Math.min(1,(u-3.2)/.4);if(u>8.2)a=Math.max(0,(8.8-u)/.6);
+        var cy=board.y+board.h+16*s;
+        ctx.globalAlpha=a*.7;ctx.strokeStyle=HUD;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(board.x+board.w/2,board.y+board.h+4*s);ctx.lineTo(board.x+board.w/2,cy);ctx.stroke();ctx.globalAlpha=1;
+        panel([{text:'ANSWER',size:sf(),color:HUD},{text:'3/4 is greater.',size:Math.max(15,17*s),color:INK},{text:'3/4 = 6/8, and 6/8 > 5/8.',size:Math.max(11.5,12.5*s),color:DIM}],{w:Math.min(W-28,330),y:cy,a:a});
+      }
+    }
+    else if(pers===1&&mode===0){
+      var left=Math.max(1,Math.ceil((11*3600+5*60-(10*3600+42*60+(t%1200)))/60));
+      panel([{text:'NEXT UP',size:sf(),color:DIM},{text:'11:05  Exit ticket · in '+left+' min',size:cf(),color:INK},{text:'11:30  Recess duty',size:cf(),color:DIM},{text:'12:15  Staff meeting',size:cf(),color:DIM}],{});
+    }
+    else if(pers===1&&mode===1){
+      var Q=6,q=Math.floor(t/Q)%3,qr=Math.min(1,((t%Q)/Q)/.5);
+      panel([{text:SPK_ES[q],size:sf(),color:DIM},{text:SPK_EN[q],size:cf(),color:INK,rev:qr}],{});
+    }
+    else {
+      var v=(t-ms)%8;
+      var a2=Math.min(1,v/.8)*(.65+.35*Math.sin(t*5)),px=Math.max(10,sheet.w*.25);
+      if(v<6.6)corners(sheet.x-px,sheet.y-px*1.4,sheet.w+px*2,sheet.h+px*2.8,Math.max(7,7*s),a2);
+      if(v>=1.2&&v<2.6){ctx.fillStyle=HUD;ctx.font='600 '+Math.max(10,10.5*s)+'px '+MONO;ctx.fillText('● CAMERA ON',14,14+Math.max(10,10.5*s)*3.8)}
+      if(v>=1.6&&v<1.85){ctx.fillStyle='rgba(255,255,255,'+(.6*(1-(v-1.6)/.25))+')';ctx.fillRect(0,0,W,H)}
+      if(v>=1.8&&v<6.6)panel([{text:'PHOTO SAVED',size:cf(),color:INK}],{y:14+Math.max(10,10.5*s)*5.4,a:Math.min(1,(v-1.8)/.3)});
+    }
+  }
+
+  /* ---------- loop ---------- */
+  function frame(ts){
+    if(!vis){running=false;return}
+    var dt=Math.max(0,Math.min(.05,(ts-last)/1000));last=ts;
+    try{
+      if(playing)t+=dt;idle+=dt;
+      if(!dragging&&idle>2.5)manual*=.985;
+      var tgt=(reduce?0:40*Math.sin(t*.2))+manual;
+      camX+=(tgt-camX)*(dragging?.35:.06);camX=Math.max(-320,Math.min(320,camX));
+      ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+      var bob=reduce||!playing?0:Math.sin(t*1.6)*1.2*s;
+      ctx.save();ctx.translate(0,bob);
+      if(pers===0)sceneStudent();else sceneTeacher();
+      ctx.restore();
+      lensFx();hud();overlay();
+    }finally{requestAnimationFrame(frame)}
+  }
+  function start(){if(vis&&!running){running=true;last=performance.now();requestAnimationFrame(frame)}}
+
+  /* ---------- controls ---------- */
+  var pb=document.querySelectorAll('[data-lp]'),mb=document.querySelectorAll('[data-lm]'),notes=document.getElementById('lensNotes').children;
+  function sync(){
+    pb.forEach(function(b,j){b.setAttribute('aria-pressed',j===pers?'true':'false')});
+    mb.forEach(function(b,j){b.setAttribute('aria-pressed',j===mode?'true':'false');b.textContent=LABELS[pers][j]});
+    for(var j=0;j<notes.length;j++)notes[j].classList.toggle('on',j===pers*3+mode);
+    canvas.setAttribute('aria-label',ARIA[pers]);
+  }
+  var mrow=document.getElementById('modeRow'),flab=document.getElementById('featLab');
+  function flash(){[mrow,flab,lensNotesEl].forEach(function(n){n.classList.remove('swap');void n.offsetWidth;n.classList.add('swap')})}
+  var lensNotesEl=document.getElementById('lensNotes');
+  pb.forEach(function(b){b.addEventListener('click',function(){var np=+b.dataset.lp;if(np===pers)return;pers=np;mode=0;ms=t;flab.textContent=pers===0?"Pick a student feature":"Pick a teacher feature";sync();flash()})});
+  mb.forEach(function(b){b.addEventListener('click',function(){mode=+b.dataset.lm;ms=t;sync()})});
+  pbtn.addEventListener('click',function(){playing=!playing;pbtn.textContent=playing?'Pause':'Play'});
+  box.addEventListener('pointerdown',function(e){dragging=true;lastX=e.clientX;box.setPointerCapture(e.pointerId)});
+  box.addEventListener('pointermove',function(e){if(!dragging)return;manual-=(e.clientX-lastX)/s*1.4;lastX=e.clientX;idle=0});
+  var endDrag=function(){dragging=false};
+  box.addEventListener('pointerup',endDrag);box.addEventListener('pointercancel',endDrag);
+  window.addEventListener('resize',resize);
+  if(window.ResizeObserver)new ResizeObserver(resize).observe(box);
+  sync();resize();
+  var go=function(){
+    if('IntersectionObserver' in window){
+      new IntersectionObserver(function(e){vis=e[0].isIntersecting;start()},{threshold:.05}).observe(box);
+    }else{vis=true;start()}
+  };
+  if(document.fonts&&document.fonts.load){document.fonts.load('500 14px "JetBrains Mono"').then(go,go)}else go();
+})();
+</script>
+<script>
+(function(){
+  var bgs=[].slice.call(document.querySelectorAll('.px'));
+  if(!bgs.length||matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  var tick=false;
+  function update(){
+    tick=false;var vh=innerHeight;
+    bgs.forEach(function(b){
+      var r=b.getBoundingClientRect();
+      if(r.bottom<-100||r.top>vh+100)return;
+      var img=b.querySelector('.pxbg');
+      var off=(r.top+r.height/2-vh/2)*-0.16;
+      img.style.transform='translate3d(0,'+off.toFixed(1)+'px,0)';
+    });
+  }
+  function req(){if(!tick){tick=true;requestAnimationFrame(update)}}
+  addEventListener('scroll',req,{passive:true});addEventListener('resize',req);update();
+})();
+</script>
+
+
+</body>
+</html>
